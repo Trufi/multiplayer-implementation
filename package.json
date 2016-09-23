@@ -9,7 +9,7 @@
   "license": "MIT",
   "scripts": {
     "postinstall": "mkdir -p dist",
-    "dev:new": "watchify index.js -o dist/bundle.js -dv",
+    "dev": "watchify src/index.js -o dist/bundle.js -dv"
   },
   "dependencies": {
     "babel-core": "^6.7.6",

@@ -10,29 +10,18 @@ import {
 
 import {serverHandle, addClient} from './server';
 import View from './View';
-import {implementUserActions} from './common';
+import {implementUserActions, createState, createPlayer, updateFromServer} from './common';
+
+import './user';
 
 // client
-
-let playerCounter = 1;
-const createPlayer = (x, y) => ({x, y, id: playerCounter++});
 
 const BUTTON_UP = '38';
 const BUTTON_DOWN = '40';
 const BUTTON_LEFT = '37';
 const BUTTON_RIGHT = '39';
 
-const state = {
-    time: 0,
-    users: {},
-    player: {
-        id: null,
-        buttonsDown: {},
-        actions: []
-    },
-    lastTimeSending: 0,
-    dataFromServer: []
-};
+const state = createState();
 
 window.onkeydown = ev => {
     const key = ev.which;
@@ -65,7 +54,7 @@ const updatePlayerActions = state => {
     }
 };
 
-const player = createPlayer(0, 0);
+const player = createPlayer(1, 0, 0);
 state.users[player.id] = player;
 state.player.id = player.id;
 
@@ -87,6 +76,7 @@ const sendToServer = (name, data) => {
 
 const sendPlayerActions = state => {
     if (state.time - state.lastTimeSending > CLIENT_SENDING_INTERVAL) {
+        implementActions(state);
         sendToServer('actions', {
             playerId: state.player.id,
             actions: state.player.actions.slice()
@@ -94,23 +84,6 @@ const sendPlayerActions = state => {
         state.player.actions = [];
         state.lastTimeSending = state.time;
     }
-};
-
-const updateFromServer = state => {
-    if (!state.dataFromServer.length) { return; }
-
-    //const users = state.dataFromServer.users;
-    state.dataFromServer.forEach(data => {
-        const users = data.users;
-
-        for (const id in users) {
-            const user = users[id];
-            state.users[id].x = user.x;
-            state.users[id].y = user.y;
-        }
-    });
-
-    state.dataFromServer = [];
 };
 
 const implementActions = state => {
@@ -125,8 +98,6 @@ const loop = () => {
     updatePlayerActions(state);
 
     updateFromServer(state);
-
-    implementActions(state);
 
     playerView.draw(state.users);
 

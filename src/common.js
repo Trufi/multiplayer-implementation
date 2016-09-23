@@ -29,3 +29,43 @@ export const implementUserActions = (actions, user) => {
 
     user.usedActions = [];
 };
+
+// only in clients
+
+export const createState = () => ({
+    time: 0,
+    users: {},
+    player: {
+        id: null,
+        buttonsDown: {},
+        actions: []
+    },
+    lastTimeSending: 0,
+    dataFromServer: []
+});
+
+export const createPlayer = (id, x, y) => ({x, y, id});
+
+export const updateFromServer = state => {
+    if (!state.dataFromServer.length) { return; }
+
+    state.dataFromServer.forEach(data => {
+        const users = data.users;
+
+        for (const id in users) {
+            if (Number(id) === state.player.id) {
+                continue;
+            }
+            const user = users[id];
+
+            if (!state.users[id]) {
+                state.users[id] = createPlayer();
+            }
+
+            state.users[id].x = user.x;
+            state.users[id].y = user.y;
+        }
+    });
+
+    state.dataFromServer = [];
+};
