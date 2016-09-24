@@ -4,7 +4,7 @@ import {
     ACTION_LEFT,
     ACTION_RIGHT,
     FIELD_SIZE,
-    PLAYER_STEP
+    PLAYER_SPEED_STEP
 } from './constants';
 
 const clamp = (x1, x2, x) => Math.max(x1, Math.min(x2, x));
@@ -17,17 +17,22 @@ const setPlayerPosition = (user, x, y) => {
 export const implementUserActions = (actions, user) => {
     actions.forEach(action => {
         if (action === ACTION_UP) {
-            setPlayerPosition(user, user.x, user.y - PLAYER_STEP);
+            user.vy += PLAYER_SPEED_STEP;
         } else if (action === ACTION_DOWN) {
-            setPlayerPosition(user, user.x, user.y + PLAYER_STEP);
+            user.vy -= PLAYER_SPEED_STEP;
         } else if (action === ACTION_LEFT) {
-            setPlayerPosition(user, user.x - PLAYER_STEP, user.y);
+            user.vx += PLAYER_SPEED_STEP;
         } else if (action === ACTION_RIGHT) {
-            setPlayerPosition(user, user.x + PLAYER_STEP, user.y);
+            user.vx -= PLAYER_SPEED_STEP;
         }
     });
 
     user.usedActions = [];
+};
+
+export const updateUserPosition = (user, delta) => {
+    user.x = clamp(0, FIELD_SIZE, user.x + user.vx * delta);
+    user.y = clamp(0, FIELD_SIZE, user.y + user.vy * delta);
 };
 
 // only in clients
@@ -44,7 +49,7 @@ export const createState = () => ({
     dataFromServer: []
 });
 
-export const createPlayer = (id, x, y) => ({x, y, id});
+export const createPlayer = (id, x = 0, y = 0, vx = 0, vy = 0) => ({id, x, y, vx, vy});
 
 export const updateFromServer = state => {
     if (!state.dataFromServer.length) { return; }
@@ -59,11 +64,13 @@ export const updateFromServer = state => {
             const user = users[id];
 
             if (!state.users[id]) {
-                state.users[id] = createPlayer();
+                state.users[id] = createPlayer(id);
             }
 
             state.users[id].x = user.x;
             state.users[id].y = user.y;
+            state.users[id].vx = user.vx;
+            state.users[id].vy = user.vy;
         }
     });
 

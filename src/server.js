@@ -1,21 +1,25 @@
 import {
     SERVER_SENDING_INTERVAL,
+    SERVER_UPDATE_INTERVAL,
     PING
 } from './constants';
 
 import View from './View';
-import {implementUserActions} from './common';
+import {updateUserPosition, implementUserActions} from './common';
 
 const playerView = new View('Server');
 
 let playerCounter = 1;
-const createPlayer = () => ({x:0, y: 0, usedActions: [], id: playerCounter++});
+const createPlayer = () => ({x:0, y: 0, vx: 0, vy: 0, usedActions: [], id: playerCounter++});
 
-const state = {
+const createState = () => ({
     time: 0,
     users: {},
-    lastTimeSending: 0
-};
+    lastTimeSending: 0,
+    lastTimeUpdate: 0
+});
+
+const state = createState();
 
 const clients = [];
 
@@ -30,11 +34,12 @@ export const serverHandle = (name, data) => {
     }
 };
 
-const updateUsers = state => {
+const updateUsers = (state, delta) => {
     for (const id in state.users) {
         const user = state.users[id];
         const actions = user.usedActions;
         implementUserActions(actions, user);
+        updateUserPosition(user, delta);
     }
 };
 
@@ -63,15 +68,22 @@ const sendDataToUsers = state => {
 };
 
 const loop = () => {
-    requestAnimationFrame(loop);
+    setTimeout(loop, 0);
 
-    state.time = Date.now();
+    const time = Date.now();
 
-    updateUsers(state);
+    if (time - state.lastTimeUpdate < SERVER_UPDATE_INTERVAL) {
+        return;
+    }
+
+    const delta = state.time - time;
+    state.time = time;
+
+    updateUsers(state, delta);
 
     playerView.draw(state.users);
 
     sendDataToUsers(state);
 };
 
-requestAnimationFrame(loop);
+loop();

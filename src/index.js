@@ -10,7 +10,7 @@ import {
 
 import {serverHandle, addClient} from './server';
 import View from './View';
-import {implementUserActions, createState, createPlayer, updateFromServer} from './common';
+import {implementUserActions, createState, createPlayer, updateFromServer, updateUserPosition} from './common';
 
 import './user';
 
@@ -93,11 +93,16 @@ const implementActions = state => {
 const loop = () => {
     requestAnimationFrame(loop);
 
-    state.time = Date.now();
+    const time = Date.now();
+    const delta = state.time - time;
+
+    state.time = time;
 
     updatePlayerActions(state);
 
     updateFromServer(state);
+
+    updateUserPosition(state.users[state.player.id], delta);
 
     playerView.draw(state.users);
 
