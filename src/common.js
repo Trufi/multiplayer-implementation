@@ -4,8 +4,12 @@ import {
     ACTION_LEFT,
     ACTION_RIGHT,
     FIELD_SIZE,
-    PLAYER_SPEED_STEP
+    PLAYER_SPEED_STEP,
+    PING,
+    PING_RANDOM
 } from './constants';
+
+export const ping = () => Math.round(PING + (Math.random() - 0.5) * PING_RANDOM);
 
 const clamp = (x1, x2, x) => Math.max(x1, Math.min(x2, x));
 
@@ -31,8 +35,19 @@ export const implementUserActions = (actions, user) => {
 };
 
 export const updateUserPosition = (user, delta) => {
-    user.x = clamp(0, FIELD_SIZE, user.x + user.vx * delta);
-    user.y = clamp(0, FIELD_SIZE, user.y + user.vy * delta);
+    const nx = user.x + user.vx * delta;
+    user.x = clamp(0, FIELD_SIZE, nx);
+
+    if (nx !== user.x) {
+        user.vx = 0;
+    }
+
+    const ny = user.y + user.vy * delta;
+    user.y = clamp(0, FIELD_SIZE, ny);
+
+    if (ny !== user.y) {
+        user.vy = 0;
+    }
 };
 
 // only in clients

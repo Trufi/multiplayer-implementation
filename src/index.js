@@ -4,13 +4,12 @@ import {
     ACTION_LEFT,
     ACTION_RIGHT,
     FIELD_SIZE,
-    PING,
     CLIENT_SENDING_INTERVAL
 } from './constants';
 
 import {serverHandle, addClient} from './server';
 import View from './View';
-import {implementUserActions, createState, createPlayer, updateFromServer, updateUserPosition} from './common';
+import {ping, implementUserActions, createState, createPlayer, updateFromServer, updateUserPosition} from './common';
 
 import './user';
 
@@ -71,7 +70,7 @@ const playerView = new View('Client');
 const sendToServer = (name, data) => {
     setTimeout(() => {
         serverHandle(name, data);
-    }, PING);
+    }, ping());
 };
 
 const sendPlayerActions = state => {

@@ -1,11 +1,10 @@
 import {
     SERVER_SENDING_INTERVAL,
-    SERVER_UPDATE_INTERVAL,
-    PING
+    SERVER_UPDATE_INTERVAL
 } from './constants';
 
 import View from './View';
-import {updateUserPosition, implementUserActions} from './common';
+import {ping, updateUserPosition, implementUserActions} from './common';
 
 const playerView = new View('Server');
 
@@ -46,7 +45,7 @@ const updateUsers = (state, delta) => {
 const sendToClient = (client, name, data) => {
     setTimeout(() => {
         client.handle(name, data);
-    }, PING);
+    }, ping());
 };
 
 const sendDataToUsers = state => {
