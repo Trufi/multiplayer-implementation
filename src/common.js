@@ -1,3 +1,5 @@
+import * as interpolation from './linearInterpolation';
+
 import {
     ACTION_UP,
     ACTION_DOWN,
@@ -6,7 +8,8 @@ import {
     FIELD_SIZE,
     PLAYER_SPEED_STEP,
     PING,
-    PING_RANDOM
+    PING_RANDOM,
+    USER_TIME_THRESHOLD
 } from './constants';
 
 export const ping = () => Math.round(PING + (Math.random() - 0.5) * PING_RANDOM);
@@ -69,25 +72,77 @@ export const createPlayer = (id, x = 0, y = 0, vx = 0, vy = 0) => ({id, x, y, vx
 export const updateFromServer = state => {
     if (!state.dataFromServer.length) { return; }
 
-    state.dataFromServer.forEach(data => {
-        const users = data.users;
+    // Отсекаем все старые стейты
+    removeOldServerData(state);
 
-        for (const id in users) {
-            if (Number(id) === state.player.id) {
-                continue;
-            }
-            const user = users[id];
+    // Первый и второй элементы - две точки интерполяции
+    const dataA = state.dataFromServer[0];
+    const dataB = state.dataFromServer[1];
 
-            if (!state.users[id]) {
-                state.users[id] = createPlayer(id);
-            }
+    if (!dataA || !dataB) {
+        console.log('Not found dataFromServer');
+        return;
+    }
 
-            state.users[id].x = user.x;
-            state.users[id].y = user.y;
-            state.users[id].vx = user.vx;
-            state.users[id].vy = user.vy;
+    // Применяем немедленные изменения, например, новый игрок
+    updateImmediateData(state, dataA);
+
+    interpolateData(state, dataA, dataB);
+};
+
+const interpolateData = (state, dataA, dataB) => {
+    const usersA = dataA.users;
+    const usersB = dataB.users;
+
+    for (const id in usersA) {
+        if (Number(id) === state.player.id) {
+            continue;
         }
-    });
 
-    state.dataFromServer = [];
+        const userA = usersA[id];
+        const userB = usersB[id];
+
+        if (!userB) {
+            continue;
+        }
+
+        const interpolationX = interpolation.start(dataA.time, userA.x, dataB.time, userB.x);
+        const interpolationY = interpolation.start(dataA.time, userA.y, dataB.time, userB.y);
+
+        state.users[id].x = interpolation.step(interpolationX, state.time - USER_TIME_THRESHOLD);
+        state.users[id].y = interpolation.step(interpolationY, state.time - USER_TIME_THRESHOLD);
+    }
+};
+
+const updateImmediateData = (state, data) => {
+    const users = data.users;
+
+    for (const id in users) {
+        if (Number(id) === state.player.id) {
+            continue;
+        }
+
+        const user = users[id];
+        if (!state.users[id]) {
+            state.users[id] = createPlayer(id);
+        }
+    }
+};
+
+const removeOldServerData = state => {
+    const {time, dataFromServer} = state;
+
+    let i;
+
+    for (i = 0; i < dataFromServer.length; i++) {
+        if (dataFromServer[i].time > time - USER_TIME_THRESHOLD) {
+            break;
+        }
+    }
+
+    i = i - 1;
+
+    if (i > 0) {
+        state.dataFromServer = state.dataFromServer.slice(i);
+    }
 };

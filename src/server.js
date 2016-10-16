@@ -54,7 +54,8 @@ const sendDataToUsers = state => {
     }
 
     const data = {
-        users: {}
+        users: {},
+        time: state.time
     };
 
     for (const id in state.users) {
@@ -64,6 +65,8 @@ const sendDataToUsers = state => {
     }
 
     clients.forEach(client => sendToClient(client, 'data', data));
+
+    state.lastTimeSending = state.time;
 };
 
 const loop = () => {
