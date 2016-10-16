@@ -61,7 +61,8 @@ export const createState = () => ({
     player: {
         id: null,
         buttonsDown: {},
-        actions: []
+        actions: [],
+        previousPositions: []
     },
     lastTimeSending: 0,
     dataFromServer: []
@@ -73,7 +74,7 @@ export const updateFromServer = state => {
     if (!state.dataFromServer.length) { return; }
 
     // Отсекаем все старые стейты
-    removeOldServerData(state);
+    removeOldData(state.time - USER_TIME_THRESHOLD, state.dataFromServer);
 
     // Первый и второй элементы - две точки интерполяции
     const dataA = state.dataFromServer[0];
@@ -88,6 +89,82 @@ export const updateFromServer = state => {
     updateImmediateData(state, dataA);
 
     interpolateData(state, dataA, dataB);
+
+    correctPlayerPosition(state, state.dataFromServer[state.dataFromServer.length - 1]);
+};
+
+const correctPlayerPosition = (state, serverData) => {
+    const playerId = state.player.id;
+    if (!playerId) {
+        return;
+    }
+
+    const time = serverData.time;
+
+    const serverUser = serverData.users[playerId];
+
+    if (!serverUser) {
+        console.log('no player from server');
+        return;
+    }
+
+    const [userA, userB] = findClampPoints(state.player.previousPositions, time);
+
+    if (!userA || !userB) {
+        console.log('Not found previousPositions');
+        return;
+    }
+
+    const interpolationX = interpolation.start(userA.time, userA.x, userB.time, userB.x);
+    const interpolationY = interpolation.start(userA.time, userA.y, userB.time, userB.y);
+
+    const clientX = interpolation.step(interpolationX, time);
+    const clientY = interpolation.step(interpolationY, time);
+
+    // Корректируем текущие положение игрока с учетом ошибки в прошлом
+    const user = state.users[playerId];
+
+    const deltaX = serverUser.x - clientX;
+    const deltaY = serverUser.y - clientY;
+
+    // if (Math.abs(deltaX) < 50) {
+    //     user.x = clamp(0, FIELD_SIZE, user.x + deltaX);
+    // } else {
+    //     user.x = serverUser.x;
+    // }
+    //
+    // if (Math.abs(deltaY) < 50) {
+    //     user.y = clamp(0, FIELD_SIZE, user.y + deltaY);
+    // } else {
+    //     user.y = serverUser.y;
+    // }
+
+    if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
+        user.x = serverUser.x;
+        user.y = serverUser.y;
+        user.vx = serverUser.vx;
+        user.vy = serverUser.vy;
+        console.log('warning!');
+    }
+
+    state.player.previousPositions = [];
+};
+
+const findClampPoints = (array, time) => {
+    // предполагаем, что array отсортирован по времени <
+    let left, right;
+
+    for (let i = 0; i < array.length; i++) {
+        const el = array[i];
+        if (el.time <= time) {
+            left = el;
+        }
+        if (el.time >= time) {
+            right = el;
+        }
+    }
+
+    return [left, right];
 };
 
 const interpolateData = (state, dataA, dataB) => {
@@ -129,13 +206,10 @@ const updateImmediateData = (state, data) => {
     }
 };
 
-const removeOldServerData = state => {
-    const {time, dataFromServer} = state;
-
+const removeOldData = (time, data) => {
     let i;
-
-    for (i = 0; i < dataFromServer.length; i++) {
-        if (dataFromServer[i].time > time - USER_TIME_THRESHOLD) {
+    for (i = 0; i < data.length; i++) {
+        if (data[i].time > time) {
             break;
         }
     }
@@ -143,6 +217,6 @@ const removeOldServerData = state => {
     i = i - 1;
 
     if (i > 0) {
-        state.dataFromServer = state.dataFromServer.slice(i);
+        data.splice(0, i);
     }
 };

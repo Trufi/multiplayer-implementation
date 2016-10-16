@@ -103,6 +103,9 @@ const loop = () => {
 
     updateUserPosition(state.users[state.player.id], delta);
 
+    // Сохраняем положение юзера, чтобы потом сравнить с сервером
+    state.player.previousPositions.push(Object.assign({time}, state.users[state.player.id]));
+
     playerView.draw(state.users);
 
     sendPlayerActions(state);
