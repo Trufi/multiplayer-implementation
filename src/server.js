@@ -30,6 +30,7 @@ export const serverHandle = (name, data) => {
             state.users[data.playerId] = createPlayer();
         }
         state.users[data.playerId].usedActions = data.actions;
+        state.users[data.playerId].lastClientTime = data.time;
     }
 };
 

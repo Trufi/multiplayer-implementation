@@ -75,10 +75,10 @@ const sendToServer = (name, data) => {
 
 const sendPlayerActions = state => {
     if (state.time - state.lastTimeSending > CLIENT_SENDING_INTERVAL) {
-        implementActions(state);
         sendToServer('actions', {
             playerId: state.player.id,
-            actions: state.player.actions.slice()
+            actions: state.player.actions.slice(),
+            time: state.time
         });
         state.player.actions = [];
         state.lastTimeSending = state.time;
@@ -99,9 +99,13 @@ const loop = () => {
 
     updatePlayerActions(state);
 
-    updateFromServer(state);
+    if (state.time - state.lastTimeSending > CLIENT_SENDING_INTERVAL) {
+        implementActions(state);
+    }
 
     updateUserPosition(state.users[state.player.id], delta);
+
+    updateFromServer(state);
 
     // Сохраняем положение юзера, чтобы потом сравнить с сервером
     state.player.previousPositions.push(Object.assign({time}, state.users[state.player.id]));

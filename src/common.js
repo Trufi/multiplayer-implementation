@@ -99,72 +99,58 @@ const correctPlayerPosition = (state, serverData) => {
         return;
     }
 
-    const time = serverData.time;
-
     const serverUser = serverData.users[playerId];
+
+    const time = serverUser.lastClientTime;
 
     if (!serverUser) {
         console.log('no player from server');
         return;
     }
 
-    const [userA, userB] = findClampPoints(state.player.previousPositions, time);
+    const userA = state.player.previousPositions.find(positon => positon.time === time);
 
-    if (!userA || !userB) {
-        console.log('Not found previousPositions');
+    if (!userA) {
+        console.log('Not found previousPosition');
         return;
     }
-
-    const interpolationX = interpolation.start(userA.time, userA.x, userB.time, userB.x);
-    const interpolationY = interpolation.start(userA.time, userA.y, userB.time, userB.y);
-
-    const clientX = interpolation.step(interpolationX, time);
-    const clientY = interpolation.step(interpolationY, time);
 
     // Корректируем текущие положение игрока с учетом ошибки в прошлом
     const user = state.users[playerId];
 
-    const deltaX = serverUser.x - clientX;
-    const deltaY = serverUser.y - clientY;
+    const deltaX = serverUser.x - userA.x;
+    const deltaY = serverUser.y - userA.y;
 
-    // if (Math.abs(deltaX) < 50) {
-    //     user.x = clamp(0, FIELD_SIZE, user.x + deltaX);
-    // } else {
-    //     user.x = serverUser.x;
-    // }
-    //
-    // if (Math.abs(deltaY) < 50) {
-    //     user.y = clamp(0, FIELD_SIZE, user.y + deltaY);
-    // } else {
-    //     user.y = serverUser.y;
-    // }
+    if (Math.abs(deltaX) < 50) {
+        user.x = clamp(0, FIELD_SIZE, user.x + deltaX);
+        user.vx += serverUser.vx - userA.vx;
 
-    if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
+        if (Math.abs(serverUser.vx - userA.vx) > 0) {
+            console.log('str');
+        }
+        if (Math.abs(deltaX) > 2) {
+            console.log('ttt');
+        }
+    } else {
         user.x = serverUser.x;
-        user.y = serverUser.y;
-        user.vx = serverUser.vx;
-        user.vy = serverUser.vy;
-        console.log('warning!');
     }
+
+    if (Math.abs(deltaY) < 50) {
+        user.y = clamp(0, FIELD_SIZE, user.y + deltaY);
+        user.vy += serverUser.vy - userA.vy;
+    } else {
+        user.y = serverUser.y;
+    }
+
+    // if (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15) {
+    //     user.x = serverUser.x;
+    //     user.y = serverUser.y;
+    //     user.vx = serverUser.vx;
+    //     user.vy = serverUser.vy;
+    //     console.log('warning!');
+    // }
 
     state.player.previousPositions = [];
-};
-
-const findClampPoints = (array, time) => {
-    // предполагаем, что array отсортирован по времени <
-    let left, right;
-
-    for (let i = 0; i < array.length; i++) {
-        const el = array[i];
-        if (el.time <= time) {
-            left = el;
-        }
-        if (el.time >= time) {
-            right = el;
-        }
-    }
-
-    return [left, right];
 };
 
 const interpolateData = (state, dataA, dataB) => {

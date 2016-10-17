@@ -11,3 +11,5 @@ export const start = (x1, y1, x2, y2) => {
 export const step = ({a, b}, x) => {
     return a * x + b;
 };
+
+export const value = (x1, y1, x2, y2, x) => step(start(x1, y1, x2, y2), x);
