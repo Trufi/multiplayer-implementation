@@ -8,6 +8,7 @@ export const SERVER_UPDATE_INTERVAL = 20;
 export const PING = 100;
 export const PING_RANDOM = 20;
 export const USER_TIME_THRESHOLD = 250;
+export const USER_NEXT_SYNC_TIME = 1000;
 
 export const ACTION_UP = 'ACTION_UP';
 export const ACTION_DOWN = 'ACTION_DOWN';

@@ -1,4 +1,5 @@
 import * as interpolation from './linearInterpolation';
+import * as ticker from './ticker';
 
 import {
     ACTION_UP,
@@ -9,7 +10,8 @@ import {
     PLAYER_SPEED_STEP,
     PING,
     PING_RANDOM,
-    USER_TIME_THRESHOLD
+    USER_TIME_THRESHOLD,
+    USER_NEXT_SYNC_TIME
 } from './constants';
 
 export const ping = () => Math.round(PING + (Math.random() - 0.5) * PING_RANDOM);
@@ -99,6 +101,16 @@ const correctPlayerPosition = (state, serverData) => {
         return;
     }
 
+    const user = state.users[playerId];
+
+    if (user.tx) {
+        user.x = clamp(0, FIELD_SIZE, user.x + ticker.get(user.tx, state.time));
+    }
+
+    if (user.ty) {
+        user.y = clamp(0, FIELD_SIZE, user.y + ticker.get(user.ty, state.time));
+    }
+
     const serverUser = serverData.users[playerId];
 
     const time = serverUser.lastClientTime;
@@ -111,44 +123,39 @@ const correctPlayerPosition = (state, serverData) => {
     const userA = state.player.previousPositions.find(positon => positon.time === time);
 
     if (!userA) {
-        console.log('Not found previousPosition');
+        // console.log('Not found previousPosition');
         return;
     }
 
     // Корректируем текущие положение игрока с учетом ошибки в прошлом
-    const user = state.users[playerId];
 
     const deltaX = serverUser.x - userA.x;
     const deltaY = serverUser.y - userA.y;
 
-    if (Math.abs(deltaX) < 50) {
-        user.x = clamp(0, FIELD_SIZE, user.x + deltaX);
-        user.vx += serverUser.vx - userA.vx;
-
-        if (Math.abs(serverUser.vx - userA.vx) > 0) {
-            console.log('str');
-        }
-        if (Math.abs(deltaX) > 2) {
-            console.log('ttt');
-        }
-    } else {
+    function fullUpdate() {
+        console.log('ALARM');
         user.x = serverUser.x;
+        user.y = serverUser.y;
+        user.vx = serverUser.vx;
+        user.vy = serverUser.vy;
+        user.tx = null;
+        user.ty = null;
+    }
+
+    if (Math.abs(deltaX) < 50) {
+        user.tx = ticker.start(USER_NEXT_SYNC_TIME, state.time, deltaX);
+        user.vx += serverUser.vx - userA.vx;
+    } else {
+        fullUpdate();
+        return;
     }
 
     if (Math.abs(deltaY) < 50) {
-        user.y = clamp(0, FIELD_SIZE, user.y + deltaY);
+        user.ty = ticker.start(USER_NEXT_SYNC_TIME, state.time, deltaY);
         user.vy += serverUser.vy - userA.vy;
     } else {
-        user.y = serverUser.y;
+        fullUpdate();
     }
-
-    // if (Math.abs(deltaX) > 15 || Math.abs(deltaY) > 15) {
-    //     user.x = serverUser.x;
-    //     user.y = serverUser.y;
-    //     user.vx = serverUser.vx;
-    //     user.vy = serverUser.vy;
-    //     console.log('warning!');
-    // }
 
     state.player.previousPositions = [];
 };
