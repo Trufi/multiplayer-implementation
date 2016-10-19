@@ -6,6 +6,12 @@ import {
 import View from './View';
 import {ping, updateUserPosition, implementUserActions} from './common';
 
+let boom = false;
+
+document.getElementById('boom').onclick = () => {
+    boom = true;
+};
+
 const playerView = new View('Server');
 
 let playerCounter = 1;
@@ -70,6 +76,20 @@ const sendDataToUsers = state => {
     state.lastTimeSending = state.time;
 };
 
+const makeBoom = state => {
+    if (!boom) {
+        return;
+    }
+
+    for (const id in state.users) {
+        const user = state.users[id];
+        user.vx = (Math.random() - 0.5) * 2;
+        user.vy = (Math.random() - 0.5) * 2;
+    }
+
+    boom = false;
+}
+
 const loop = () => {
     setTimeout(loop, 0);
 
@@ -81,6 +101,8 @@ const loop = () => {
 
     const delta = state.time - time;
     state.time = time;
+
+    makeBoom(state);
 
     updateUsers(state, delta);
 

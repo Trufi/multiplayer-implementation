@@ -129,11 +129,27 @@ const correctPlayerPosition = (state, serverData) => {
 
     // Корректируем текущие положение игрока с учетом ошибки в прошлом
 
-    const deltaX = serverUser.x - userA.x;
-    const deltaY = serverUser.y - userA.y;
+    function getDelta(fromServer, last, current) {
+        const d1 = fromServer - last;
+        const d2 = fromServer - current;
+        return Math.abs(d1) < Math.abs(d2) ? d1 : d2;
+    }
+
+    const deltaX = getDelta(serverUser.x, userA.x, user.x);
+    const deltaY = getDelta(serverUser.y, userA.y, user.y);
+
+    function minorUpdate() {
+        console.log('MINOR ALARM', serverUser.x, serverUser.y, serverUser.vx, serverUser.vy);
+        user.x = clamp(0, FIELD_SIZE, user.x + deltaX);
+        user.y = clamp(0, FIELD_SIZE, user.y + deltaY);
+        user.vx += getDelta(serverUser.vx, userA.vx, user.vx);
+        user.vy += getDelta(serverUser.vy, userA.vy, user.vy);
+        user.tx = null;
+        user.ty = null;
+    }
 
     function fullUpdate() {
-        console.log('ALARM');
+        console.log('ALARM', serverUser.x, serverUser.y, serverUser.vx, serverUser.vy);
         user.x = serverUser.x;
         user.y = serverUser.y;
         user.vx = serverUser.vx;
@@ -142,19 +158,21 @@ const correctPlayerPosition = (state, serverData) => {
         user.ty = null;
     }
 
-    if (Math.abs(deltaX) < 50) {
+    if (Math.abs(deltaX) < 100) {
         user.tx = ticker.start(USER_NEXT_SYNC_TIME, state.time, deltaX);
-        user.vx += serverUser.vx - userA.vx;
+        user.vx += getDelta(serverUser.vx, userA.vx, user.vx);
     } else {
-        fullUpdate();
+        minorUpdate();
+
+        state.player.previousPositions = [];
         return;
     }
 
-    if (Math.abs(deltaY) < 50) {
+    if (Math.abs(deltaY) < 100) {
         user.ty = ticker.start(USER_NEXT_SYNC_TIME, state.time, deltaY);
-        user.vy += serverUser.vy - userA.vy;
+        user.vy += getDelta(serverUser.vy, userA.vy, user.vy);
     } else {
-        fullUpdate();
+        minorUpdate();
     }
 
     state.player.previousPositions = [];
