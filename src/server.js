@@ -1,15 +1,11 @@
-import {
-    SERVER_SENDING_INTERVAL,
-    SERVER_UPDATE_INTERVAL
-} from './constants';
-
+import config from './config';
 import View from './View';
 import {ping, updateUserPosition, implementUserActions} from './common';
 
-let boom = false;
+let entropy = false;
 
-document.getElementById('boom').onclick = () => {
-    boom = true;
+document.getElementById('entropy').onclick = () => {
+    entropy = true;
 };
 
 const playerView = new View('Server');
@@ -56,7 +52,7 @@ const sendToClient = (client, name, data) => {
 };
 
 const sendDataToUsers = state => {
-    if (state.time - state.lastTimeSending < SERVER_SENDING_INTERVAL) {
+    if (state.time - state.lastTimeSending < config.server.sendingInterval) {
         return;
     }
 
@@ -76,8 +72,8 @@ const sendDataToUsers = state => {
     state.lastTimeSending = state.time;
 };
 
-const makeBoom = state => {
-    if (!boom) {
+const makeEntropy = state => {
+    if (!entropy) {
         return;
     }
 
@@ -87,7 +83,7 @@ const makeBoom = state => {
         user.vy = (Math.random() - 0.5) * 2;
     }
 
-    boom = false;
+    entropy = false;
 }
 
 const loop = () => {
@@ -95,20 +91,22 @@ const loop = () => {
 
     const time = Date.now();
 
-    if (time - state.lastTimeUpdate < SERVER_UPDATE_INTERVAL) {
+    if (time - state.lastTimeUpdate < config.server.updateInterval) {
         return;
     }
 
     const delta = state.time - time;
     state.time = time;
 
-    makeBoom(state);
+    makeEntropy(state);
 
     updateUsers(state, delta);
 
     playerView.draw(state.users);
 
     sendDataToUsers(state);
+
+    state.lastTimeUpdate = time;
 };
 
 loop();

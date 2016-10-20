@@ -7,14 +7,13 @@ import {
     ACTION_LEFT,
     ACTION_RIGHT,
     FIELD_SIZE,
-    PLAYER_SPEED_STEP,
-    PING,
-    PING_RANDOM,
-    USER_TIME_THRESHOLD,
-    USER_NEXT_SYNC_TIME
+    PLAYER_SPEED_STEP
 } from './constants';
 
-export const ping = () => Math.round(PING + (Math.random() - 0.5) * PING_RANDOM);
+import config from './config';
+
+export const ping = () => Math.round(config.ping.value + (Math.random() - 0.5) *
+    config.ping.value * config.ping.randomFactor);
 
 const clamp = (x1, x2, x) => Math.max(x1, Math.min(x2, x));
 
@@ -76,14 +75,13 @@ export const updateFromServer = state => {
     if (!state.dataFromServer.length) { return; }
 
     // Отсекаем все старые стейты
-    removeOldData(state.time - USER_TIME_THRESHOLD, state.dataFromServer);
+    removeOldData(state.time - config.spectatorThreshold, state.dataFromServer);
 
     // Первый и второй элементы - две точки интерполяции
     const dataA = state.dataFromServer[0];
     const dataB = state.dataFromServer[1];
 
     if (!dataA || !dataB) {
-        console.log('Not found dataFromServer');
         return;
     }
 
@@ -159,7 +157,7 @@ const correctPlayerPosition = (state, serverData) => {
     }
 
     if (Math.abs(deltaX) < 100) {
-        user.tx = ticker.start(USER_NEXT_SYNC_TIME, state.time, deltaX);
+        user.tx = ticker.start(config.player.syncTimeInterval, state.time, deltaX);
         user.vx += getDelta(serverUser.vx, userA.vx, user.vx);
     } else {
         minorUpdate();
@@ -169,7 +167,7 @@ const correctPlayerPosition = (state, serverData) => {
     }
 
     if (Math.abs(deltaY) < 100) {
-        user.ty = ticker.start(USER_NEXT_SYNC_TIME, state.time, deltaY);
+        user.ty = ticker.start(config.player.syncTimeInterval, state.time, deltaY);
         user.vy += getDelta(serverUser.vy, userA.vy, user.vy);
     } else {
         minorUpdate();
@@ -197,8 +195,8 @@ const interpolateData = (state, dataA, dataB) => {
         const interpolationX = interpolation.start(dataA.time, userA.x, dataB.time, userB.x);
         const interpolationY = interpolation.start(dataA.time, userA.y, dataB.time, userB.y);
 
-        state.users[id].x = interpolation.step(interpolationX, state.time - USER_TIME_THRESHOLD);
-        state.users[id].y = interpolation.step(interpolationY, state.time - USER_TIME_THRESHOLD);
+        state.users[id].x = interpolation.step(interpolationX, state.time - config.spectatorThreshold);
+        state.users[id].y = interpolation.step(interpolationY, state.time - config.spectatorThreshold);
     }
 };
 

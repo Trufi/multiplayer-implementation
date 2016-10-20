@@ -2,13 +2,6 @@ export const FIELD_SIZE = 300;
 export const POINT_SIZE = 10;
 export const PLAYER_STEP = 5;
 export const PLAYER_SPEED_STEP = 0.01;
-export const CLIENT_SENDING_INTERVAL = 50;
-export const SERVER_SENDING_INTERVAL = 50;
-export const SERVER_UPDATE_INTERVAL = 20;
-export const PING = 100;
-export const PING_RANDOM = 20;
-export const USER_TIME_THRESHOLD = 250;
-export const USER_NEXT_SYNC_TIME = 1000;
 
 export const ACTION_UP = 'ACTION_UP';
 export const ACTION_DOWN = 'ACTION_DOWN';

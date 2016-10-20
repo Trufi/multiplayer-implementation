@@ -18,6 +18,7 @@
     "browserify": "^13.0.0"
   },
   "devDependencies": {
+    "dat-gui": "^0.5.0",
     "watchify": "^3.7.0"
   },
   "browserify": {

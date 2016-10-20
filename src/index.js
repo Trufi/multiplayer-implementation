@@ -1,15 +1,25 @@
+import dat from 'dat-gui';
+
 import {
     ACTION_UP,
     ACTION_DOWN,
     ACTION_LEFT,
     ACTION_RIGHT,
-    FIELD_SIZE,
-    CLIENT_SENDING_INTERVAL
+    FIELD_SIZE
 } from './constants';
 
+import config from './config';
 import {serverHandle, addClient} from './server';
 import View from './View';
-import {ping, implementUserActions, createState, createPlayer, updateFromServer, updateUserPosition} from './common';
+
+import {
+    ping,
+    implementUserActions,
+    createState,
+    createPlayer,
+    updateFromServer,
+    updateUserPosition
+} from './common';
 
 import './user';
 
@@ -65,7 +75,7 @@ addClient({
     }
 });
 
-const playerView = new View('Client');
+const playerView = new View('Player');
 
 const sendToServer = (name, data) => {
     setTimeout(() => {
@@ -74,7 +84,7 @@ const sendToServer = (name, data) => {
 };
 
 const sendPlayerActions = state => {
-    if (state.time - state.lastTimeSending > CLIENT_SENDING_INTERVAL) {
+    if (state.time - state.lastTimeSending > config.player.updateInterval) {
         sendToServer('actions', {
             playerId: state.player.id,
             actions: state.player.actions.slice(),
@@ -99,7 +109,7 @@ const loop = () => {
 
     updatePlayerActions(state);
 
-    if (state.time - state.lastTimeSending > CLIENT_SENDING_INTERVAL) {
+    if (state.time - state.lastTimeSending > config.player.updateInterval) {
         implementActions(state);
     }
 
@@ -116,3 +126,22 @@ const loop = () => {
 };
 
 requestAnimationFrame(loop);
+
+// Enable dat-gui
+const gui = new dat.GUI();
+gui.width = 300;
+
+const guiServer = gui.addFolder('Server');
+guiServer.add(config.server, 'sendingInterval', 0, 100);
+guiServer.add(config.server, 'updateInterval', 0, 100);
+
+const guiPing = gui.addFolder('Ping');
+guiPing.add(config.ping, 'value', 0, 1000);
+guiPing.add(config.ping, 'randomFactor', 0, 1);
+
+const guiPlayer = gui.addFolder('Player');
+guiPlayer.add(config.player, 'updateInterval', 0, 1000);
+guiPlayer.add(config.player, 'syncTimeInterval', 0, 10000);
+
+gui.add(config, 'spectatorThreshold', 0, 1000);
+gui.add(config, 'drawOtherMarks');
