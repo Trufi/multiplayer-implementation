@@ -11,7 +11,7 @@ document.getElementById('entropy').onclick = () => {
 const playerView = new View('Server');
 
 let playerCounter = 1;
-const createPlayer = () => ({x:0, y: 0, vx: 0, vy: 0, usedActions: [], id: playerCounter++});
+const createPlayer = () => ({x: 0, y: 0, vx: 0, vy: 0, usedActions: [], id: playerCounter++});
 
 const createState = () => ({
     time: 0,
@@ -84,7 +84,7 @@ const makeEntropy = state => {
     }
 
     entropy = false;
-}
+};
 
 const loop = () => {
     setTimeout(loop, 0);

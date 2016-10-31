@@ -4,8 +4,7 @@ import {
     ACTION_UP,
     ACTION_DOWN,
     ACTION_LEFT,
-    ACTION_RIGHT,
-    FIELD_SIZE
+    ACTION_RIGHT
 } from './constants';
 
 import config from './config';
@@ -43,7 +42,6 @@ window.onkeyup = ev => {
 };
 
 const updatePlayerActions = state => {
-    const user = state.users[state.player.id];
     const player = state.player;
 
     for (const button in player.buttonsDown) {

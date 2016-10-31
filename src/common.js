@@ -17,11 +17,6 @@ export const ping = () => Math.round(config.ping.value + (Math.random() - 0.5) *
 
 const clamp = (x1, x2, x) => Math.max(x1, Math.min(x2, x));
 
-const setPlayerPosition = (user, x, y) => {
-    user.x = clamp(0, FIELD_SIZE, x);
-    user.y = clamp(0, FIELD_SIZE, y);
-};
-
 export const implementUserActions = (actions, user) => {
     actions.forEach(action => {
         if (action === ACTION_UP) {
@@ -146,16 +141,6 @@ const correctPlayerPosition = (state, serverData) => {
         user.ty = null;
     }
 
-    function fullUpdate() {
-        console.log('ALARM', serverUser.x, serverUser.y, serverUser.vx, serverUser.vy);
-        user.x = serverUser.x;
-        user.y = serverUser.y;
-        user.vx = serverUser.vx;
-        user.vy = serverUser.vy;
-        user.tx = null;
-        user.ty = null;
-    }
-
     if (Math.abs(deltaX) < 100) {
         user.tx = ticker.start(config.player.syncTimeInterval, state.time, deltaX);
         user.vx += getDelta(serverUser.vx, userA.vx, user.vx);
@@ -208,7 +193,6 @@ const updateImmediateData = (state, data) => {
             continue;
         }
 
-        const user = users[id];
         if (!state.users[id]) {
             state.users[id] = createPlayer(id);
         }

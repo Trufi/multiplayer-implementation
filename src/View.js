@@ -8,7 +8,7 @@ const viewColors = {
     Server: [0, 0, 255],
     Player: [255, 0, 0],
     Spectator: [255, 255, 0]
-}
+};
 
 export default class View {
     constructor(text) {

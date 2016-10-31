@@ -1,6 +1,6 @@
 import {addClient} from './server';
 import View from './View';
-import {createPlayer, updateFromServer, createState} from './common';
+import {updateFromServer, createState} from './common';
 
 const state = createState();
 
