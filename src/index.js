@@ -1,4 +1,5 @@
 import dat from 'dat-gui';
+import Stats from 'statistical-sampling';
 
 import {
     ACTION_UP,
@@ -17,7 +18,8 @@ import {
     createState,
     createPlayer,
     updateFromServer,
-    updateUserPosition
+    updateUserPosition,
+    getSpectatorThreshold
 } from './common';
 
 import './user';
@@ -65,14 +67,6 @@ const player = createPlayer(1, 0, 0);
 state.users[player.id] = player;
 state.player.id = player.id;
 
-addClient({
-    handle: (name, data) => {
-        if (name === 'data') {
-            state.dataFromServer.push(data);
-        }
-    }
-});
-
 const playerView = new View('Player');
 
 const sendToServer = (name, data) => {
@@ -93,6 +87,46 @@ const sendPlayerActions = state => {
     }
 };
 
+const stats = new Stats();
+stats.get('ping').sampleLimit = 10;
+stats.get('delta').sampleLimit = 30;
+
+const statsDom = stats.getHtmlElement();
+statsDom.style.position = 'absolute';
+statsDom.style.top = 0;
+statsDom.style.left = 0;
+statsDom.style.color = '#ff0000';
+statsDom.style.opacity = 0.5;
+document.body.appendChild(statsDom);
+
+let lastTimePing = 0;
+
+const onPong = data => {
+    const serverTime = data.time;
+    const now = Date.now();
+    const dt = lastTimePing + (now - lastTimePing) / 2 - serverTime;
+
+    stats.add('ping', now - serverTime - dt);
+    stats.add('delta', dt);
+};
+
+setInterval(() => {
+    const now = Date.now();
+    lastTimePing = now;
+    sendToServer('ping', {time: now, playerId: player.id});
+}, 500);
+
+addClient({
+    id: player.id,
+    handle: (name, data) => {
+        if (name === 'data') {
+            state.dataFromServer.push(data);
+        } else if (name === 'pong') {
+            onPong(data);
+        }
+    }
+});
+
 const implementActions = state => {
     implementUserActions(state.player.actions, state.users[state.player.id]);
 };
@@ -104,6 +138,11 @@ const loop = () => {
     const delta = state.time - time;
 
     state.time = time;
+    state.ping = {
+        mean: stats.get('ping').getMean(),
+        deviation: stats.get('ping').getDeviation()
+    };
+    console.log(getSpectatorThreshold(state));
 
     updatePlayerActions(state);
 
@@ -121,6 +160,8 @@ const loop = () => {
     playerView.draw(state.users);
 
     sendPlayerActions(state);
+
+    stats.update();
 };
 
 requestAnimationFrame(loop);

@@ -33,6 +33,11 @@ export const serverHandle = (name, data) => {
         }
         state.users[data.playerId].usedActions = data.actions;
         state.users[data.playerId].lastClientTime = data.time;
+    } else if (name === 'ping') {
+        const client = clients.find(c => c.id === data.playerId);
+        if (client) {
+            sendToClient(client, 'pong', {time: Date.now()});
+        }
     }
 };
 

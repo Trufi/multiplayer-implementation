@@ -64,13 +64,16 @@ export const createState = () => ({
     dataFromServer: []
 });
 
+export const getSpectatorThreshold = state => (state.ping.mean + state.ping.deviation * 3) * 2 +
+    config.server.sendingInterval;
+
 export const createPlayer = (id, x = 0, y = 0, vx = 0, vy = 0) => ({id, x, y, vx, vy});
 
 export const updateFromServer = state => {
     if (!state.dataFromServer.length) { return; }
 
     // Отсекаем все старые стейты
-    removeOldData(state.time - config.spectatorThreshold, state.dataFromServer);
+    removeOldData(state.time - getSpectatorThreshold(state), state.dataFromServer);
 
     // Первый и второй элементы - две точки интерполяции
     const dataA = state.dataFromServer[0];
@@ -180,8 +183,8 @@ const interpolateData = (state, dataA, dataB) => {
         const interpolationX = interpolation.start(dataA.time, userA.x, dataB.time, userB.x);
         const interpolationY = interpolation.start(dataA.time, userA.y, dataB.time, userB.y);
 
-        state.users[id].x = interpolation.step(interpolationX, state.time - config.spectatorThreshold);
-        state.users[id].y = interpolation.step(interpolationY, state.time - config.spectatorThreshold);
+        state.users[id].x = interpolation.step(interpolationX, state.time - getSpectatorThreshold(state));
+        state.users[id].y = interpolation.step(interpolationY, state.time - getSpectatorThreshold(state));
     }
 };
 

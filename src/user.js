@@ -1,6 +1,7 @@
 import {addClient} from './server';
 import View from './View';
 import {updateFromServer, createState} from './common';
+import config from './config';
 
 const state = createState();
 
@@ -18,6 +19,10 @@ const loop = () => {
     requestAnimationFrame(loop);
 
     state.time = Date.now();
+    state.ping = {
+        mean: config.ping.value,
+        deviation: config.ping.value * config.ping.randomFactor
+    };
 
     updateFromServer(state);
 
